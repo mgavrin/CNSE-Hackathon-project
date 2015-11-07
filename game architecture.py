@@ -30,7 +30,8 @@ class screen:
         self.playerHitboxWidth=playerHitboxWidth
         self.gameScreen=pygame.display.set_mode(self.screenSize,0,32)
         self.backgroundColor=pygame.Color(0,0,0)
-        self.gameScreen.fill(self.backgroundColor)
+        #self.gameScreen.fill(self.backgroundColor)
+        self.gameScreen.blit(backgroundImage,(0,0))
         self.gameSlice=pygame.Surface(self.screenSize)
         self.clock=pygame.time.Clock()
         self.fps=36
@@ -68,7 +69,7 @@ class screen:
 
     def getLevel(self):
         #probably rejigger this to be controllable by EMG
-        acceptable=[1,2,3,4,5,6,7,8,9,10]
+        acceptable=range(1,20)
         playerInput=""
         while playerInput not in acceptable:
             playerInput=input("Select a difficulty level between 1 and 10 inclusive.")
@@ -121,7 +122,8 @@ class screen:
 
     def drawScreen(self):
         self.backgroundColor=pygame.Color(0,0,0)
-        self.gameScreen.fill(self.backgroundColor)
+        #self.gameScreen.fill(self.backgroundColor)
+        self.gameScreen.blit(backgroundImage,(0,0))
         wallGray=pygame.Color(188,188,188)
         for border in self.borders:
             pygame.draw.rect(self.gameScreen, wallGray, border)
@@ -135,9 +137,12 @@ class screen:
         spaceship=self.playerHitboxRect
         if self.crash:
             tempShipColor=crashedShipColor
+            shipImage=crashedShip
         else:
             tempShipColor=aliveShipColor
-        pygame.draw.rect(self.gameScreen,tempShipColor,spaceship)
+            shipImage=aliveShip
+        #pygame.draw.rect(self.gameScreen,tempShipColor,spaceship)
+        self.gameScreen.blit(shipImage,self.playerHitboxRect)
         #add life counters
         #add level indicator
         if self.crash:
@@ -181,4 +186,10 @@ playerHitboxWidth=100
 spaceBetweenHurdles=200 #make this change with level?
 aliveShipColor=pygame.Color(0,0,255)
 crashedShipColor=pygame.Color(255,0,0)
+aliveShipImage=pygame.image.load(os.path.join("Art","rocket.jpg"))
+crashedShipImage=pygame.image.load(os.path.join("Art","crash.jpg"))
+aliveShip=pygame.transform.scale(aliveShipImage, (playerHitboxWidth, playerHitboxHeight))
+crashedShip=pygame.transform.scale(crashedShipImage, (playerHitboxWidth, playerHitboxHeight))
+backgroundImage=pygame.image.load(os.path.join("Art","Hubble_2004_Deep_Sky.jpg"))
+backgroundImage=pygame.transform.scale(backgroundImage,(screenWidth,screenHeight))
 game=screen(screenWidth,screenHeight,playerHitboxHeight,playerHitboxWidth) #START
