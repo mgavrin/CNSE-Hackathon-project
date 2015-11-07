@@ -79,19 +79,6 @@ class screen:
         topBorder=pygame.Rect(0,0,self.screenSize[0],20)#(left top width height)
         bottomBorder=pygame.Rect(0,self.screenSize[1]-20,self.screenSize[0],20)
         return [topBorder,bottomBorder]
-
-##    def generateHurdle(self): #deprecated
-##        level=self.level
-##        wallGray=pygame.Color(188,188,188)
-##        gapSize=self.screenSize[0]-80-25*level
-##        topOfGap=randint(20,self.screenSize[1]-gapSize)
-##        bottomOfGap=topOfGap+gapSize
-##        aboveGap=pygame.Surface((30,topOfGap))
-##        aboveGap.fill(wallGray)
-##        belowGap=pygame.Surface((30,self.screenSize[1]-bottomOfGap))
-##        belowGap.fill(wallGray)
-##        return [aboveGap,belowGap,self.screenSize[0]-30,bottomOfGap]
-        #top surface, bottom surface, x coordinate of left, y coordinate of bottom of gap
         
     def getInput(self):
         events = pygame.event.get()
@@ -167,23 +154,19 @@ class screen:
         return allObstacles
 
     def detectCrash(self):
-        activeObstacles=[]
-        for obs in self.allObstacles:
-            if obs not in self.crashedObstacles:
-                activeObstacles.append(obs)
         collision=self.playerHitboxRect.collidelist(self.allObstacles)
-        if collision!=-1 and self.allObstacles[collision] in activeObstacles:
+        if collision!=-1 and self.allObstacles[collision] not in self.crashedObstacles:
             #crashed into a new obstacle
             self.crash=True
-            self.crashedObstacles.append(activeObstacles[collision])
+            self.crashedObstacles.append(self.allObstacles[collision])
             self.lives-=1
-            print "CRASH!",self.allObstacles[collision]
+            print "CRASH!"
             #add fancy on-screen stuff here
             if self.lives==0:
                 print "GAME OVER"
             #add fancy on-screen stuff here
                 self.running=False
-        elif collision==1:
+        elif collision==-1:
             self.crash=False
 
     def levelUp(self):
