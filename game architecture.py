@@ -42,19 +42,23 @@ class screen:
         #(x position doesn't change).
         self.getHitbox()
         self.borders=self.generateBorders()
-        self.level=self.getLevel()
-        #self.level=1 #PUT THIS BACK
+        if not debug:
+            self.emgSetup()
+            self.level=self.getLevel()
+            self.lives=3
+        else:
+            self.level=1
+            self.lives=1
         firstHurdle=hurdle(yDim,self.level)
         self.hurdles=[firstHurdle]
         self.pixelsSinceLastHurdle=0
-        self.lives=3
         self.hurdlesPassed=0
+        self.hurdlesPassedThisLevel=0
         self.allObstacles=[]
         self.crashedObstacles=[]
         self.crash=False #make this true while announcing a crash
+        self.gameOver=False
         self.paused=False
-        if not debug:
-            self.emgSetup()
         self.previousData=[0]
         self.allPreviousData=[]
         self.running=True
@@ -155,8 +159,8 @@ class screen:
         self.advanceScreen()
         self.allObstacles=self.getAllObstacles()
         self.detectCrash()
-        if self.hurdlesPassed>=15:
-            self.hurdlesPassed=0
+        if self.hurdlesPassedThisLevel>15:
+            self.hurdlesPassedThisLevel=0
             self.levelUp()
 
     def advanceScreen(self):
@@ -166,6 +170,7 @@ class screen:
         if self.pixelsSinceLastHurdle>=spaceBetweenHurdles:
             self.pixelsSinceLastHurdle=0
             self.hurdlesPassed+=1
+            self.hurdlesPassedThisLevel+=1
             newHurdle=hurdle(self.screenSize[1],self.level)
             self.hurdles.append(newHurdle)
         self.pixelsSinceLastHurdle+=1
@@ -183,15 +188,22 @@ class screen:
             bottomPos=(hurdle.belowGapRect.left,hurdle.belowGapRect.top)
             self.gameScreen.blit(hurdle.aboveGapSurface,hurdle.aboveGapRect)
             self.gameScreen.blit(hurdle.belowGapSurface,hurdle.belowGapRect)
-        if self.crash:
+        if self.gameOver:
+            shipImage=gameOver
+            shipBlitPos=(0,self.screenSize[1]/2-100)
+        elif self.crash:
             shipImage=crashedShip
+            shipBlitPos=self.playerHitboxRect.topleft
         else:
             shipImage=aliveShip
-        self.gameScreen.blit(shipImage,self.playerHitboxRect.topleft)
+            shipBlitPos=self.playerHitboxRect.topleft
+        self.gameScreen.blit(shipImage,shipBlitPos)
         levelImg=self.mainFont.render("Level "+str(self.level),False,(255,255,255))
         livesImg=self.mainFont.render("Lives Remaining: "+str(self.lives),False,(255,255,255))
+        scoreImg=self.mainFont.render("Score: "+str(self.hurdlesPassed),False,(255,255,255))
         self.gameScreen.blit(levelImg,(0,20))
         self.gameScreen.blit(livesImg,(245,20))
+        self.gameScreen.blit(scoreImg,(0,self.screenSize[1]-45))
         pygame.display.flip()
 
     def getAllObstacles(self):
@@ -213,7 +225,7 @@ class screen:
             print "CRASH!"
             if self.lives==0:
                 print "GAME OVER"
-                
+                self.gameOver=True
                 self.paused=True
         elif collision==-1:
             self.crash=False
@@ -234,8 +246,8 @@ crashedShipColor=pygame.Color(255,0,0)
 aliveShipImage=pygame.image.load(os.path.join("Art","rocket_flat.png"))
 crashedShipImage=pygame.image.load(os.path.join("Art","crash_flat.png"))
 aliveShip=pygame.transform.scale(aliveShipImage, (playerHitboxWidth, playerHitboxHeight))
-lifeMarker=pygame.transform.scale(aliveShipImage, (playerHitboxWidth/2, playerHitboxHeight/2))
 crashedShip=pygame.transform.scale(crashedShipImage, (playerHitboxWidth, playerHitboxHeight))
+gameOver=pygame.image.load(os.path.join("Art","game over.png"))
 backgroundImage=pygame.image.load(os.path.join("Art","Hubble_2004_Deep_Sky.jpg"))
 backgroundImage=pygame.transform.scale(backgroundImage,(screenWidth,screenHeight))
 #big thank you to NASA and clipart.co

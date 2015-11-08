@@ -1,6 +1,5 @@
 Optional Features
 
-*gesture control mode with the data glove (ew new hardware)
 *bonus one-up pickups for extra life
 *sounds! ding for level up, other happy noise for extra life,
         explosion when you crash
