@@ -49,13 +49,14 @@ class screen:
         else:
             self.level=1
             self.lives=1
-        firstHurdle=hurdle(yDim,self.level)
-        self.hurdles=[firstHurdle]
+        #firstHurdle=hurdle(yDim,self.level)
+        self.hurdles=[]
         self.pixelsSinceLastHurdle=0
         self.hurdlesPassed=0
         self.hurdlesPassedThisLevel=0
         self.allObstacles=[]
         self.crashedObstacles=[]
+        self.relaxing=False #initial calibration period
         self.crash=False #make this true while announcing a crash
         self.gameOver=False
         self.paused=False
@@ -69,10 +70,11 @@ class screen:
     def mainloop(self):
         counter=0
         while self.running:
+            print counter
             if not self.debug:
                 data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
             counter+=1
-            if counter%50==0:
+            if counter%50==0 and counter>1000:
                 event=self.getInput()
                 if not self.paused:
                     self.processInput(event)
@@ -97,7 +99,7 @@ class screen:
         self.playerHitboxRect=pygame.Rect(hitboxLeft,hitboxTop,playerHitboxWidth,playerHitboxHeight)
     
     def getLevel(self):
-        acceptable=range(1,20)
+        acceptable=range(1,10)
         playerInput=""
         while playerInput not in acceptable:
             playerInput=input("Select a difficulty level between 1 and 10 inclusive.")
