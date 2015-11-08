@@ -1,0 +1,15 @@
+Credits
+
+The hardware used in this project was created by Biometrics Ltd.
+
+Thank you to NASA for the deep field image (public domain)
+and clipart.co for the fire image (public domain).
+The following sound files were obtained from freesound.org:
+    Rezzo_4 by Flick3r
+    (license: http://creativecommons.org/licenses/by/3.0/)
+    pollie soft by summonhue (license: http://creativecommons.org/publicdomain/zero/1.0/)
+    Action music loop with dark ambient drones by burning-mir (license: http://creativecommons.org/publicdomain/zero/1.0/)
+
+    
+    
+    

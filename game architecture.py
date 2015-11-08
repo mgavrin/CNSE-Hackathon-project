@@ -24,7 +24,9 @@ fakeDownPress=pygame.event.Event(KEYDOWN,{"key":K_DOWN})
 class screen:
     #runs at start of screen, conducts background setup before first loop
     def __init__(self,xDim,yDim,playerHitboxHeight,playerHitboxWidth,debug=False):
+        pygame.mixer.pre_init(44100, -16, 2, 2048)
         pygame.init()
+        print pygame.mixer.get_init()
         self.screenSize=(xDim,yDim)
         self.gameScreen=pygame.display.set_mode(self.screenSize,0,32)
         self.backgroundColor=pygame.Color(0,0,0)
@@ -51,8 +53,10 @@ class screen:
             self.lives=1
         #firstHurdle=hurdle(yDim,self.level)
         self.hurdles=[]
-        self.pixelsSinceLastHurdle=0
-        self.hurdlesPassed=0
+        self.calibrationPeriod=True
+        self.pixelsSinceLastHurdle=175
+        self.hurdlesPassed=-1
+        #compensate for the absence-of-hurdle during the calibration period
         self.hurdlesPassedThisLevel=0
         self.allObstacles=[]
         self.crashedObstacles=[]
@@ -62,6 +66,10 @@ class screen:
         self.paused=False
         self.previousData=[0]
         self.allPreviousData=[]
+        self.crashSound=pygame.mixer.Sound(os.path.join("Art","crash sound.wav"))
+        self.gameOverSound=pygame.mixer.Sound(os.path.join("Art","game over sound.wav"))
+        self.BGM=pygame.mixer.Sound(os.path.join("Art","BGM3.wav"))
+        self.BGM.play(-1)
         self.running=True
 
         #The following needs to be the last line in __init__!
@@ -70,11 +78,10 @@ class screen:
     def mainloop(self):
         counter=0
         while self.running:
-            print counter
             if not self.debug:
                 data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
             counter+=1
-            if counter%50==0 and counter>1000:
+            if counter%50==0:
                 event=self.getInput()
                 if not self.paused:
                     self.processInput(event)
@@ -169,7 +176,9 @@ class screen:
         for h in self.hurdles:
             h.aboveGapRect.left-=1
             h.belowGapRect.left-=1
+        print self.pixelsSinceLastHurdle
         if self.pixelsSinceLastHurdle>=spaceBetweenHurdles:
+            self.calibrationPeriod=False
             self.pixelsSinceLastHurdle=0
             self.hurdlesPassed+=1
             self.hurdlesPassedThisLevel+=1
@@ -195,6 +204,9 @@ class screen:
             shipBlitPos=(0,self.screenSize[1]/2-100)
         elif self.crash:
             shipImage=crashedShip
+            shipBlitPos=self.playerHitboxRect.topleft
+        elif self.calibrationPeriod:
+            shipImage=self.mainFont.render("Squeeze . . .",False,(255,255,255))
             shipBlitPos=self.playerHitboxRect.topleft
         else:
             shipImage=aliveShip
@@ -225,10 +237,13 @@ class screen:
             self.crashedObstacles.append(self.allObstacles[collision])
             self.lives-=1
             print "CRASH!"
+            self.crashSound.play()
             if self.lives==0:
                 print "GAME OVER"
                 self.gameOver=True
                 self.paused=True
+                self.BGM.stop()
+                self.gameOverSound.play()
         elif collision==-1:
             self.crash=False
 
@@ -236,6 +251,12 @@ class screen:
         print "Level up!"
         #add fancy on-screen stuff here
         self.level+=1
+        if self.level%2==0:
+            self.BGM1.stop()
+            self.BGM2.play(-1)
+        else:
+            self.BGM2.stop()
+            self.BGM2.play(-1)
 
 activeChannel=0 #the EMG channel that has data coming in
 screenWidth=500
