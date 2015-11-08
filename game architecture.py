@@ -23,7 +23,7 @@ fakeDownPress=pygame.event.Event(KEYDOWN,{"key":K_DOWN})
 
 class screen:
     #runs at start of screen, conducts background setup before first loop
-    def __init__(self,xDim,yDim,playerHitboxHeight,playerHitboxWidth):
+    def __init__(self,xDim,yDim,playerHitboxHeight,playerHitboxWidth,debug=False):
         pygame.init()
         self.screenSize=(xDim,yDim)
         self.gameScreen=pygame.display.set_mode(self.screenSize,0,32)
@@ -34,6 +34,7 @@ class screen:
         self.gameSlice=pygame.Surface(self.screenSize)
         self.clock=pygame.time.Clock()
         self.fps=720
+        self.debug=debug#true when hardware is not connected
         self.playerHitboxHeight=playerHitboxHeight
         self.playerHitboxWidth=playerHitboxWidth
         self.playerPos=yDim/2
@@ -51,7 +52,9 @@ class screen:
         self.allObstacles=[]
         self.crashedObstacles=[]
         self.crash=False #make this true while announcing a crash
-        self.emgSetup()
+        self.paused=False
+        if not debug:
+            self.emgSetup()
         self.previousData=[0]
         self.allPreviousData=[]
         self.running=True
@@ -61,15 +64,17 @@ class screen:
 
     def mainloop(self):
         counter=0
-        while self.running:  
-            data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
+        while self.running:
+            if not self.debug:
+                data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
             counter+=1
             if counter%50==0:
                 event=self.getInput()
-                self.processInput(event)
-                self.updateGameState()
-                self.drawScreen()
-                self.clock.tick(self.fps)
+                if not self.paused:
+                    self.processInput(event)
+                    self.updateGameState()
+                    self.drawScreen()
+                    self.clock.tick(self.fps)
         pygame.display.quit() #after you quit and running turns off, the while will exit and the display will quit
         
     def emgSetup(self):   
@@ -80,9 +85,7 @@ class screen:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
         self.sock.bind((UDP_IP, UDP_PORT))
    
-#while True:
-#   data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-#   print "received message:", data
+
 
     def getHitbox(self):
         hitboxTop=self.playerPos
@@ -90,7 +93,6 @@ class screen:
         self.playerHitboxRect=pygame.Rect(hitboxLeft,hitboxTop,playerHitboxWidth,playerHitboxHeight)
     
     def getLevel(self):
-        #probably rejigger this to be controllable by EMG
         acceptable=range(1,20)
         playerInput=""
         while playerInput not in acceptable:
@@ -105,12 +107,14 @@ class screen:
         
     def getInput(self):
         events=pygame.event.get()
-        #print "received message:", data
-        data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
+        if self.debug:
+            data="Signal(0,0) 00"
+        else:
+            data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
         print "data:",data
-        while len(self.previousData)>2560:
-            self.previousData=self.previousData[1:]
-        self.previousDataAvg=sum(self.previousData)/len(self.previousData)
+##        while len(self.previousData)>2560:
+##            self.previousData=self.previousData[1:]
+##        self.previousDataAvg=sum(self.previousData)/len(self.previousData)
         if "Signal" in data and len(data)>=13 and int(data[7])==activeChannel:
             print "found some data"
             channel=data[7]
@@ -126,19 +130,19 @@ class screen:
                 events.append(fakeUpPress)
             else:
                 events.append(fakeDownPress)
-            self.previousData.append(absDatum)
+            #self.previousData.append(absDatum)
             self.allPreviousData.append(datum)
         for event in events:
             if event.type == QUIT:
                 self.running=False
                 print self.allPreviousData
-            else:
-                if event in [fakeUpPress,fakeDownPress]:
-                    return event
-                return None
+            elif event.type==KEYDOWN and event.key==K_p:
+                self.paused=not self.paused
+            elif event in [fakeUpPress,fakeDownPress]:
+                return event
+            return None
 
     def processInput(self,event):
-        #this will probably change when you have inputs
         if not event:
             return
         if event is fakeUpPress:
@@ -207,11 +211,10 @@ class screen:
             self.crashedObstacles.append(self.allObstacles[collision])
             self.lives-=1
             print "CRASH!"
-            #add fancy on-screen stuff here
             if self.lives==0:
                 print "GAME OVER"
-            #add fancy on-screen stuff here
-                self.running=False
+                
+                self.paused=True
         elif collision==-1:
             self.crash=False
 
@@ -237,4 +240,4 @@ backgroundImage=pygame.image.load(os.path.join("Art","Hubble_2004_Deep_Sky.jpg")
 backgroundImage=pygame.transform.scale(backgroundImage,(screenWidth,screenHeight))
 #big thank you to NASA and clipart.co
 #for putting their pics in the public domain!
-game=screen(screenWidth,screenHeight,playerHitboxHeight,playerHitboxWidth) #START
+game=screen(screenWidth,screenHeight,playerHitboxHeight,playerHitboxWidth,True) #START
