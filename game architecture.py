@@ -26,8 +26,6 @@ class screen:
     def __init__(self,xDim,yDim,playerHitboxHeight,playerHitboxWidth):
         pygame.init()
         self.screenSize=(xDim,yDim)
-        self.playerHitboxHeight=playerHitboxHeight
-        self.playerHitboxWidth=playerHitboxWidth
         self.gameScreen=pygame.display.set_mode(self.screenSize,0,32)
         self.backgroundColor=pygame.Color(0,0,0)
         self.mainFont=pygame.font.SysFont("arial",25)
@@ -35,13 +33,13 @@ class screen:
         self.gameScreen.blit(backgroundImage,(0,0))
         self.gameSlice=pygame.Surface(self.screenSize)
         self.clock=pygame.time.Clock()
-        self.fps=36
+        self.fps=720
+        self.playerHitboxHeight=playerHitboxHeight
+        self.playerHitboxWidth=playerHitboxWidth
         self.playerPos=yDim/2
         #Initial y position of the top left corner of the player
         #(x position doesn't change).
-        hitboxTop=self.playerPos
-        hitboxLeft=xDim/2-playerHitboxWidth
-        self.playerHitboxRect=pygame.Rect(hitboxLeft,hitboxTop,playerHitboxWidth,playerHitboxHeight)
+        self.getHitbox()
         self.borders=self.generateBorders()
         self.level=self.getLevel()
         #self.level=1 #PUT THIS BACK
@@ -53,21 +51,44 @@ class screen:
         self.allObstacles=[]
         self.crashedObstacles=[]
         self.crash=False #make this true while announcing a crash
+        self.emgSetup()
+        self.previousData=[0]
+        self.allPreviousData=[]
         self.running=True
 
         #The following needs to be the last line in __init__!
         self.mainloop()
 
     def mainloop(self):
-        while self.running:
-            event=self.getInput()
-            self.processInput(event)
-            self.updateGameState()
-            self.drawScreen()
-            self.clock.tick(self.fps)
+        counter=0
+        while self.running:  
+            data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
+            counter+=1
+            if counter%50==0:
+                event=self.getInput()
+                self.processInput(event)
+                self.updateGameState()
+                self.drawScreen()
+                self.clock.tick(self.fps)
         pygame.display.quit() #after you quit and running turns off, the while will exit and the display will quit
+        
+    def emgSetup(self):   
+        import socket
+   
+        UDP_IP = "127.0.0.1"
+        UDP_PORT = 20101
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+        self.sock.bind((UDP_IP, UDP_PORT))
+   
+#while True:
+#   data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+#   print "received message:", data
 
-
+    def getHitbox(self):
+        hitboxTop=self.playerPos
+        hitboxLeft=self.screenSize[0]/2-self.playerHitboxWidth
+        self.playerHitboxRect=pygame.Rect(hitboxLeft,hitboxTop,playerHitboxWidth,playerHitboxHeight)
+    
     def getLevel(self):
         #probably rejigger this to be controllable by EMG
         acceptable=range(1,20)
@@ -83,23 +104,48 @@ class screen:
         return [topBorder,bottomBorder]
         
     def getInput(self):
-        events = pygame.event.get()
+        events=pygame.event.get()
+        #print "received message:", data
+        data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
+        print "data:",data
+        while len(self.previousData)>2560:
+            self.previousData=self.previousData[1:]
+        self.previousDataAvg=sum(self.previousData)/len(self.previousData)
+        if "Signal" in data and len(data)>=13 and int(data[7])==activeChannel:
+            print "found some data"
+            channel=data[7]
+            if data[10]==")":
+                datumNumber=data[9]
+                datum=data[12:]
+            else:
+                datumNumber=data[9:11]
+                datum=data[13:]
+            absDatum=abs(float(datum))
+            print absDatum
+            if absDatum>=0.1:
+                events.append(fakeUpPress)
+            else:
+                events.append(fakeDownPress)
+            self.previousData.append(absDatum)
+            self.allPreviousData.append(datum)
         for event in events:
             if event.type == QUIT:
                 self.running=False
+                print self.allPreviousData
             else:
-                #add some screening for the right type of input here
-                return event
-        #wait to write the rest until you have inputs
+                if event in [fakeUpPress,fakeDownPress]:
+                    return event
+                return None
 
     def processInput(self,event):
         #this will probably change when you have inputs
         if not event:
             return
         if event is fakeUpPress:
-            self.playerPos-=1
+            self.playerPos=max(self.playerPos-1,0)
         elif event is fakeDownPress:
-            self.playerPos+=1
+            self.playerPos=min(self.playerPos+1,self.screenSize[1])
+        self.getHitbox()
 
     def updateGameState(self):
         self.advanceScreen()
@@ -174,6 +220,7 @@ class screen:
         #add fancy on-screen stuff here
         self.level+=1
 
+activeChannel=0 #the EMG channel that has data coming in
 screenWidth=500
 screenHeight=500
 playerHitboxHeight=50
