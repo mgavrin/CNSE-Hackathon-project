@@ -30,7 +30,8 @@ class screen:
         self.playerHitboxWidth=playerHitboxWidth
         self.gameScreen=pygame.display.set_mode(self.screenSize,0,32)
         self.backgroundColor=pygame.Color(0,0,0)
-        #self.gameScreen.fill(self.backgroundColor)
+        self.mainFont=pygame.font.SysFont("arial",25)
+        self.mainFont.set_bold(True)
         self.gameScreen.blit(backgroundImage,(0,0))
         self.gameSlice=pygame.Surface(self.screenSize)
         self.clock=pygame.time.Clock()
@@ -132,21 +133,15 @@ class screen:
             bottomPos=(hurdle.belowGapRect.left,hurdle.belowGapRect.top)
             self.gameScreen.blit(hurdle.aboveGapSurface,hurdle.aboveGapRect)
             self.gameScreen.blit(hurdle.belowGapSurface,hurdle.belowGapRect)
-            #pygame.draw.rect(self.gameScreen, wallGray, hurdle[0])
-            #pygame.draw.rect(self.gameScreen, wallGray, hurdle[1])
-        spaceship=self.playerHitboxRect
         if self.crash:
-            tempShipColor=crashedShipColor
             shipImage=crashedShip
         else:
-            tempShipColor=aliveShipColor
             shipImage=aliveShip
-        #pygame.draw.rect(self.gameScreen,tempShipColor,spaceship)
-        self.gameScreen.blit(shipImage,self.playerHitboxRect)
-        #add life counters
-        #add level indicator
-        if self.crash:
-            pass #add crash indicator
+        self.gameScreen.blit(shipImage,self.playerHitboxRect.topleft)
+        levelImg=self.mainFont.render("Level "+str(self.level),False,(255,255,255))
+        livesImg=self.mainFont.render("Lives Remaining: "+str(self.lives),False,(255,255,255))
+        self.gameScreen.blit(levelImg,(0,20))
+        self.gameScreen.blit(livesImg,(245,20))
         pygame.display.flip()
 
     def getAllObstacles(self):
@@ -186,10 +181,13 @@ playerHitboxWidth=100
 spaceBetweenHurdles=200 #make this change with level?
 aliveShipColor=pygame.Color(0,0,255)
 crashedShipColor=pygame.Color(255,0,0)
-aliveShipImage=pygame.image.load(os.path.join("Art","rocket.jpg"))
-crashedShipImage=pygame.image.load(os.path.join("Art","crash.jpg"))
+aliveShipImage=pygame.image.load(os.path.join("Art","rocket_flat.png"))
+crashedShipImage=pygame.image.load(os.path.join("Art","crash_flat.png"))
 aliveShip=pygame.transform.scale(aliveShipImage, (playerHitboxWidth, playerHitboxHeight))
+lifeMarker=pygame.transform.scale(aliveShipImage, (playerHitboxWidth/2, playerHitboxHeight/2))
 crashedShip=pygame.transform.scale(crashedShipImage, (playerHitboxWidth, playerHitboxHeight))
 backgroundImage=pygame.image.load(os.path.join("Art","Hubble_2004_Deep_Sky.jpg"))
 backgroundImage=pygame.transform.scale(backgroundImage,(screenWidth,screenHeight))
+#big thank you to NASA and clipart.co
+#for putting their pics in the public domain!
 game=screen(screenWidth,screenHeight,playerHitboxHeight,playerHitboxWidth) #START
