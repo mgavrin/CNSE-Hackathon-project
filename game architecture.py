@@ -65,7 +65,6 @@ class screen:
         self.crash=False #make this true while announcing a crash
         self.gameOver=False
         self.paused=False
-        self.previousData=[0]
         self.allPreviousData=[]
         self.crashSound=pygame.mixer.Sound(os.path.join("Art","crash sound.wav"))
         self.gameOverSound=pygame.mixer.Sound(os.path.join("Art","game over sound.wav"))
@@ -139,9 +138,6 @@ class screen:
         else:
             data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
         print "data:",data
-##        while len(self.previousData)>2560:
-##            self.previousData=self.previousData[1:]
-##        self.previousDataAvg=sum(self.previousData)/len(self.previousData)
         if "Signal" in data and len(data)>=13 and int(data[7])==activeChannel:
             print "found some data"
             channel=data[7]
@@ -150,14 +146,13 @@ class screen:
                 datum=data[12:]
             else:
                 datumNumber=data[9:11]
-                datum=data[13:]
-            absDatum=abs(float(datum))
+                datum=float(data[13:])
+            absDatum=abs(datum)
             print absDatum
             if absDatum>=0.1:
                 events.append(fakeUpPress)
             else:
                 events.append(fakeDownPress)
-            #self.previousData.append(absDatum)
             self.allPreviousData.append(datum)
         for event in events:
             if event.type == QUIT:
