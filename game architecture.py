@@ -7,6 +7,7 @@ import math
 from math import *
 import os
 import string
+import csv
 
 #optional features for later:
     #life counter (important)
@@ -66,6 +67,9 @@ class screen:
         self.paused=False
         self.previousData=[0]
         self.allPreviousData=[]
+        with open('eggs.csv', 'wb') as csvfile:
+            datawriter = csv.writer(csvfile, delimiter=' ',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
         self.crashSound=pygame.mixer.Sound(os.path.join("Art","crash sound.wav"))
         self.gameOverSound=pygame.mixer.Sound(os.path.join("Art","game over sound.wav"))
         self.BGM=pygame.mixer.Sound(os.path.join("Art","BGM3.wav"))
@@ -80,6 +84,14 @@ class screen:
         while self.running:
             if not self.debug:
                 data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
+                if data[10]==")":
+                    datumNumber=data[9]
+                    datum=data[12:]
+                else:
+                    datumNumber=data[9:11]
+                    datum=data[13:]
+                self.allPreviousData.append(datum)
+                datawriter.writerow([datum]
             counter+=1
             if counter%50==0:
                 event=self.getInput()
