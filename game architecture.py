@@ -67,9 +67,6 @@ class screen:
         self.paused=False
         self.previousData=[0]
         self.allPreviousData=[]
-        with open('eggs.csv', 'wb') as csvfile:
-            datawriter = csv.writer(csvfile, delimiter=' ',
-                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
         self.crashSound=pygame.mixer.Sound(os.path.join("Art","crash sound.wav"))
         self.gameOverSound=pygame.mixer.Sound(os.path.join("Art","game over sound.wav"))
         self.BGM=pygame.mixer.Sound(os.path.join("Art","BGM3.wav"))
@@ -91,7 +88,6 @@ class screen:
                     datumNumber=data[9:11]
                     datum=data[13:]
                 self.allPreviousData.append(datum)
-                datawriter.writerow([datum]
             counter+=1
             if counter%50==0:
                 event=self.getInput()
@@ -100,6 +96,12 @@ class screen:
                     self.updateGameState()
                     self.drawScreen()
                     self.clock.tick(self.fps)
+        
+        with open('eggs.csv', 'wb') as csvfile:
+            datawriter = csv.writer(csvfile, delimiter=' ',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            
+                datawriter.writerow([allPreviousData])
         pygame.display.quit() #after you quit and running turns off, the while will exit and the display will quit
         
     def emgSetup(self):   
@@ -263,12 +265,6 @@ class screen:
         print "Level up!"
         #add fancy on-screen stuff here
         self.level+=1
-        if self.level%2==0:
-            self.BGM1.stop()
-            self.BGM2.play(-1)
-        else:
-            self.BGM2.stop()
-            self.BGM2.play(-1)
 
 activeChannel=0 #the EMG channel that has data coming in
 screenWidth=500
@@ -285,6 +281,4 @@ crashedShip=pygame.transform.scale(crashedShipImage, (playerHitboxWidth, playerH
 gameOver=pygame.image.load(os.path.join("Art","game over.png"))
 backgroundImage=pygame.image.load(os.path.join("Art","Hubble_2004_Deep_Sky.jpg"))
 backgroundImage=pygame.transform.scale(backgroundImage,(screenWidth,screenHeight))
-#big thank you to NASA and clipart.co
-#for putting their pics in the public domain!
 game=screen(screenWidth,screenHeight,playerHitboxHeight,playerHitboxWidth,True) #START
