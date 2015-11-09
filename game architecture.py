@@ -77,16 +77,17 @@ class screen:
 
     def mainloop(self):
         counter=0
-        while self.running:
+        while self.running and not self.gameOver:
             if not self.debug:
                 data, addr = self.sock.recvfrom(1024) # buffer size is 1024 bytes
-                if data[10]==")":
-                    datumNumber=data[9]
-                    datum=data[12:]
-                else:
-                    datumNumber=data[9:11]
-                    datum=float(data[13:])
-                self.allPreviousData.append(datum)
+                if "Signal" in data and len(data)>=13 and int(data[7])==activeChannel:
+                    if data[10]==")":
+                        datumNumber=data[9]
+                        datum=float(data[12:])
+                    else:
+                        datumNumber=data[9:11]
+                        datum=float(data[13:])
+                    self.allPreviousData.append(datum)
             counter+=1
             if counter%50==0:
                 event=self.getInput()
@@ -95,12 +96,12 @@ class screen:
                     self.updateGameState()
                     self.drawScreen()
                     self.clock.tick(self.fps)
-        
-        with open('eggs.csv', 'wb') as csvfile:
-            datawriter = csv.writer(csvfile, delimiter=' ',
-                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            
-                datawriter.writerow([allPreviousData])
+        print "exited while loop"
+        output_file=open('output1.csv','w')
+        data=csv.writer(output_file)
+        data.writerow([self.allPreviousData])
+        del data
+        print "wrote data:",self.allPreviousData
         pygame.display.quit() #after you quit and running turns off, the while will exit and the display will quit
         
     def emgSetup(self):   
@@ -143,7 +144,7 @@ class screen:
             channel=data[7]
             if data[10]==")":
                 datumNumber=data[9]
-                datum=data[12:]
+                datum=float(data[12:])
             else:
                 datumNumber=data[9:11]
                 datum=float(data[13:])
@@ -276,4 +277,4 @@ crashedShip=pygame.transform.scale(crashedShipImage, (playerHitboxWidth, playerH
 gameOver=pygame.image.load(os.path.join("Art","game over.png"))
 backgroundImage=pygame.image.load(os.path.join("Art","Hubble_2004_Deep_Sky.jpg"))
 backgroundImage=pygame.transform.scale(backgroundImage,(screenWidth,screenHeight))
-game=screen(screenWidth,screenHeight,playerHitboxHeight,playerHitboxWidth,True) #START
+game=screen(screenWidth,screenHeight,playerHitboxHeight,playerHitboxWidth,False) #START
