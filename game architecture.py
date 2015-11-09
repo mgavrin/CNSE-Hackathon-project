@@ -85,7 +85,7 @@ class screen:
                     datum=data[12:]
                 else:
                     datumNumber=data[9:11]
-                    datum=data[13:]
+                    datum=float(data[13:])
                 self.allPreviousData.append(datum)
             counter+=1
             if counter%50==0:
